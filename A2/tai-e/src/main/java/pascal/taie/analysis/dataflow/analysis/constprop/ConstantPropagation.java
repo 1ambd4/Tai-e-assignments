@@ -191,6 +191,25 @@ public class ConstantPropagation extends
         Value value1 = in.get(oprand1);
         Value value2 = in.get(oprand2);
 
+        // Oops! Wrong here, AC 51/52.
+        // https://github.com/pascal-lab/Tai-e-assignments/issues/2
+        // If value2 is zero and op is DIV or REM, must return UNDEF.
+        // Think here, if value1 is not constant, other word, value1 is NAC or UNDEF.
+        // It just returned that.
+        // But noticed, if here value2 is 0, and op is DIV or REM, it must return UNDEF.
+        // So, must check if value2 is equal 0 or not.
+        // But, how can solve this bug elegantly?
+
+        // Not elegantly, but work, :)
+        // Be sure that constant2 is not zero if op is div or rem.
+        if (value2.isConstant() && value2.getConstant() == 0) {
+            if (exp instanceof ArithmeticExp arithmeticExp) {
+                if (arithmeticExp.getOperator() == ArithmeticExp.Op.DIV || arithmeticExp.getOperator() == ArithmeticExp.Op.REM) {
+                    return Value.getUndef();
+                }
+            }
+        }
+
         // if value1 or value2 is not constant, just return that.
         if (!value1.isConstant()) {
             return value1;
@@ -202,14 +221,6 @@ public class ConstantPropagation extends
         int constant1 = value1.getConstant();
         int constant2 = value2.getConstant();
         if (exp instanceof ArithmeticExp arithmeticExp) {
-            // be sure that constant2 is not zero in div and rem.
-            if (constant2 == 0) {
-                return switch (arithmeticExp.getOperator()) {
-                    case DIV, REM -> Value.getUndef();
-                    default -> Value.getNAC();
-                };
-            }
-
             return switch (arithmeticExp.getOperator()) {
                 case ADD -> Value.makeConstant(constant1 + constant2);
                 case SUB -> Value.makeConstant(constant1 - constant2);
