@@ -76,8 +76,20 @@ public abstract class Solver<Node, Fact> {
         return result;
     }
 
+    // Fro forward analysis, should initialize entry node and other basic block node.
     protected void initializeForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        // TODO - finish me
+        // initialize entry node
+        result.setInFact(cfg.getEntry(), analysis.newBoundaryFact(cfg));
+        result.setOutFact(cfg.getEntry(), analysis.newBoundaryFact(cfg));
+
+        // initialize other basic block node
+        for (Node node : cfg) {
+            if (cfg.isEntry(node)) {
+                continue;
+            }
+            result.setInFact(node, analysis.newInitialFact());
+            result.setOutFact(node, analysis.newInitialFact());
+        }
     }
 
     protected void initializeBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
